@@ -1,8 +1,15 @@
-FROM ubuntu:18.04
+# FROM ubuntu:18.04
+FROM balenalib/%%BALENA_MACHINE_NAME%%-ubuntu:bionic
 
 ENV TERM linux
 ENV DEBIAN_FRONTEND noninteractive
+ENV PULSE_SERVER=unix:/run/pulse/pulseaudio.socket
+ENV PULSE_SINK=balena-sound.output
+ENV PULSE_SOURCE=balena-sound.input.monitor
+# ENV PULSE_SINK=balena-sound.output
+# ENV PULSE_SOURCE=mycroft.input.monitor
 
+# COPY mycroft /opt/mycroft
 # Install Server Dependencies for Mycroft
 RUN set -x \
 	&& sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list \
@@ -11,9 +18,11 @@ RUN set -x \
 	&& pip3 install future msm \
 	# Checkout Mycroft
 	&& git clone https://github.com/MycroftAI/mycroft-core.git /opt/mycroft \
+	# && cp -R mycroft /opt/mycroft \
 	&& cd /opt/mycroft \
 	&& mkdir /opt/mycroft/skills \
-	# git fetch && git checkout dev && \ this branch is now merged to master
+	# && git fetch && git checkout dev \
+	 # this branch is now merged to master
 	&& CI=true /opt/mycroft/./dev_setup.sh --allow-root -sm \
 	&& mkdir /opt/mycroft/scripts/logs \
 	&& touch /opt/mycroft/scripts/logs/mycroft-bus.log \
@@ -43,6 +52,8 @@ RUN echo "PATH=$PATH:/opt/mycroft/bin" >> $HOME/.bashrc \
 
 RUN chmod +x /opt/mycroft/start-mycroft.sh \
 	&& chmod +x /opt/mycroft/startup.sh
+
+RUN install_packages alsa-utils
 
 EXPOSE 8181
 
